@@ -1,0 +1,325 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="./game.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        body>div {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #btn {
+            width: 350px;
+            height: 50px;
+        }
+
+        #upgradesList {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .upgradeElement {
+            position: relative;
+        }
+
+        .upgradeElement>.tooltip {
+            position: absolute;
+            top: 100%;
+            left: 100%;
+            z-index: 100000;
+            background-color: black;
+            color: white;
+            width: 200px;
+            padding: 10px;
+        }
+
+        .upgradeElement>.tooltip.hidden {
+            display: none;
+        }
+
+        @media only screen and (max-width: 700px) {
+            .upgradeElement>.tooltip {
+                width: auto;
+                top: 150%;
+                left: 0;
+                pointer-events: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <button onclick="increaseCash(clickPower)" id="btn">Click me me me</button>
+
+        <p id="cash" style="font-size: 45px; font-family: monospace;">45</p>
+
+        <h2>Upgrades</h2>
+
+        <div id="upgradesList"></div>
+
+        <h2> Stats </h2>
+
+        <p>Total cash ever: <span id="totalCashEver">3777</span></p>
+        <p>Click power: <span id="clickPower">16</span></p>
+        <p>Cash per second: <span id="cashPerSecond">26</span></p>
+
+        <h2>Settings</h2>
+
+        <button id="darkModeToggle">Dark mode / Light mode</button>
+    </div>
+
+    <script>
+
+        const achievementList = [];
+
+        let totalCashEver = Number(localStorage.getItem("totalCashEver")) || 0;
+        let cash = Number(localStorage.getItem("cash")) || 0;
+
+        let clickPower = Number(localStorage.getItem("clickPower")) || 1;
+        let cashPerSecond = Number(localStorage.getItem("cashPerSecond")) || 0;
+
+        let darkModeOn = false;
+
+        function increaseTotalCashEver(int) {
+            totalCashEver += int;
+
+            document.getElementById("totalCashEver").innerHTML = totalCashEver;
+
+            localStorage.setItem("totalCashEver", totalCashEver);
+            checkAchievements();
+        }
+
+        function increaseCash(int) {
+            cash += int;
+            increaseTotalCashEver(int);
+
+            document.getElementById("cash").innerHTML = cash;
+
+            localStorage.setItem("cash", cash);
+            checkAchievements();
+        }
+
+        function decreaseCash(int) {
+            cash -= int;
+
+            localStorage.setItem("cash", cash);
+
+            document.getElementById("cash").innerHTML = cash;
+        }
+
+        function increaseCashPerSecond(int) {
+            cashPerSecond += int;
+
+            document.getElementById("cashPerSecond").innerHTML = cashPerSecond;
+
+            localStorage.setItem("cashPerSecond", cashPerSecond);
+
+            checkAchievements();
+        }
+
+        function increaseClickPower(int) {
+            clickPower += int;
+
+            document.getElementById("clickPower").innerHTML = clickPower;
+
+            localStorage.setItem("clickPower", clickPower)
+
+            checkAchievements();
+        }
+
+        increaseCash(0);
+        increaseClickPower(0);
+        increaseCashPerSecond(0);
+
+        class Achievement {
+            constructor(name, desc, checker) {
+                this.name = name;
+                this.desc = desc;
+                this.checker = checker;
+            }
+        }
+
+        achievementList.push(new Achievement("Im the best around here", "Get 100 cash", function () {
+            if (totalCashEver >= 100) {
+                alert("you have won the \"im the best around here\" achievement");
+
+                return "Success";
+            }
+        }));
+
+        // 5 click power
+        achievementList.push(new Achievement("Buff", "Get 5 click power", function () {
+            if (clickPower >= 5) {
+                alert("you have won the \"Buff\" achievement");
+
+                return "Success";
+            }
+        }));
+
+        // 5 cash per second
+        achievementList.push(new Achievement("Genius", "Get 5 cash per second", function () {
+            if (cashPerSecond >= 5) {
+                alert("you have won the \"Genius\" achievement");
+
+                return "Success";
+            }
+        }));
+
+        class Upgrade {
+            constructor(name, cost, upgFunction, desc) {
+                this.name = name;
+                this.cost = cost;
+                this.upgFunction = upgFunction;
+                this.desc = desc;
+                this.timesBought = 0;
+            }
+
+            buy() {
+                if (cash >= this.cost) {
+                    this.upgFunction();
+
+                    decreaseCash(this.cost);
+
+                    this.cost = Math.floor(this.cost * 1.34);
+                    this.timesBought++;
+
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        };
+
+        const upgradesList = [
+            new Upgrade("Cursor", 50, function () {
+                increaseClickPower(1);
+            }, "cheap cursors to have more fingers to click more times at once, increases click power by 1"),
+
+            new Upgrade("Slave", 50, function () {
+                increaseCashPerSecond(1);
+            }, "A cheap slave that is always on duty, increases cash per second by 1"),
+
+            new Upgrade("feather cursors", 125, function () {
+                increaseClickPower(3);
+            }, "Feathers make the cursor lighter so it can move quicker, increases click power by 3"),
+
+            new Upgrade("ChatGPT worker", 200, function () {
+                increaseCashPerSecond(5);
+            }, "chatgpt will operate an online business for you, increases cash per second by 5"),
+
+            new Upgrade("Redbull", 800, function () {
+                increaseClickPower(10);
+            }, "The energy of redbull comes into you, increases click power by 10"),
+
+            new Upgrade("Cash farm", 600, function () {
+                increaseCashPerSecond(8);
+            }, "use cash seeds from mystical agriculture to grow cash"),
+
+            new Upgrade("30kg weights", 2000, function () {
+                increaseClickPower(30);
+            }, "Doig exercise will make the button scared and give you more cash, increases click power by 30"),
+
+            new Upgrade("Street dealers", 1350, function () {
+                increaseCashPerSecond(20);
+            }, "these dealers will sell your goods and give you cash"),
+        ];
+
+        upgradesList.forEach((upgrade, index) => {
+            const newElement = document.createElement("button");
+            newElement.classList.add("upgradeElement");
+            newElement.innerHTML = `
+                ${upgrade.name}, cost:${upgrade.cost}, times bought:${upgrade.timesBought}
+
+                <div class="tooltip hidden">${upgrade.desc}</div>
+            `;
+
+            document.getElementById("upgradesList").appendChild(newElement);
+
+            console.log(newElement);
+
+            newElement.addEventListener("click", function () {
+                console.log(1)
+                if (upgrade.buy()) {
+                    newElement.innerHTML = `
+                        ${upgrade.name}, cost:${upgrade.cost}, times bought:${upgrade.timesBought}
+
+                        <div class="tooltip hidden">${upgrade.desc}</div>
+                    `;
+                }
+            });
+
+            newElement.addEventListener("mouseenter", function () {
+                document.querySelectorAll(".upgradeElement > .tooltip")[index].style.display = "block";
+            })
+            newElement.addEventListener("mouseleave", function () {
+                document.querySelectorAll(".upgradeElement > .tooltip")[index].style.display = "none";
+            })
+
+        })
+
+        setInterval(() => {
+            increaseCash(cashPerSecond);
+
+            console.log(cashPerSecond);
+        }, 1000);
+
+        function checkAchievements() {
+            if (achievementList[0] && achievementList[0].checker() === "Success") {
+                achievementList.splice(0, 1);
+                console.log(achievementList);
+            }
+
+            if (achievementList[1] && achievementList[1].checker() === "Success") {
+                achievementList.splice(1, 2);
+                console.log(achievementList);
+            }
+
+            if (achievementList[2] && achievementList[2].checker() === "Success") {
+                achievementList.splice(2, 3);
+                console.log(achievementList);
+            }
+        }
+
+        document.getElementById("darkModeToggle").addEventListener("click", function () {
+            if (darkModeOn === false) {
+                document.body.style.backgroundColor = "#1a1a1a";
+                document.body.style.color = "white";
+
+                darkModeOn = true;
+            } else {
+                document.body.style.backgroundColor = "white";
+                document.body.style.color = "black";
+
+                darkModeOn = false;
+            }
+        })
+    </script>
+</body>
+
+</html>
